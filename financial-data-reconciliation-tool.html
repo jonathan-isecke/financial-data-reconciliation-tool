@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobrança Ypê — Sistema de Cruzamento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F4F0;
+  --surface: #FFFFFF;
+  --surface2: #F0EFE9;
+  --border: #E2E0D8;
+  --border2: #CCC9BC;
+  --text: #1A1916;
+  --text2: #6B6860;
+  --text3: #A09E98;
+  --accent: #1B4F8A;
+  --accent-light: #EAF1FA;
+  --accent-text: #0D2E52;
+  --green: #1D6B45;
+  --green-light: #E8F5EE;
+  --amber: #7A4F0D;
+  --amber-light: #FDF3E3;
+  --red: #8B2020;
+  --red-light: #FDEAEA;
+  --lotus-bg: #EAF1FA;
+  --lotus-text: #0D2E52;
+  --ltl-bg: #FDF3E3;
+  --ltl-text: #6B3A08;
+  --srv-bg: #E8F5EE;
+  --srv-text: #0E4A2A;
+  --warn-bg: #FDEAEA;
+  --warn-text: #7A1A1A;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-lg: 0 2px 8px rgba(0,0,0,0.10), 0 8px 32px rgba(0,0,0,0.06);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.topbar-logo .logo-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.topbar-logo .logo-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+.topbar-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text3);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.step-item .step-n {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.step-item.done { color: var(--green); }
+.step-item.done .step-n { background: var(--green); border-color: var(--green); color: white; }
+.step-item.active { color: var(--accent); }
+.step-item.active .step-n { background: var(--accent); border-color: var(--accent); color: white; }
+.step-arrow { color: var(--border2); font-size: 12px; padding: 0 2px; }
+
+/* ── LAYOUT ── */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ── PAGES ── */
+.page { display: none; animation: fadeUp 0.25s ease; }
+.page.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; }
+.page-header p { color: var(--text2); font-size: 14px; }
+
+/* ── UPLOAD GRID ── */
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.upload-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  box-shadow: var(--shadow);
+}
+.upload-card-top {
+  padding: 18px 20px 14px;
+}
+.upload-drop-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 12px;
+}
+.upload-drop-zone:hover { border-color: var(--accent); background: var(--accent-light); }
+.upload-drop-zone.dragover { border-color: var(--accent); background: var(--accent-light); transform: scale(1.005); }
+.upload-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.upload-source-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.tag-a2o { background: var(--lotus-bg); color: var(--lotus-text); }
+.tag-portal { background: var(--amber-light); color: var(--amber); }
+.tag-multi { background: var(--warn-bg); color: var(--warn-text); }
+.upload-required {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--red);
+  background: var(--red-light);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.upload-optional {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text3);
+  background: var(--surface2);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.upload-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.upload-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.upload-path {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface2);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-top: 10px;
+  line-height: 1.7;
+}
+.drop-icon { font-size: 20px; margin-bottom: 5px; display: block; }
+.drop-label { font-size: 12px; color: var(--text2); }
+.drop-label strong { color: var(--accent); }
+/* File list inside card */
+.file-list {
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.file-list:empty { display: none; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  animation: fadeUp 0.15s ease;
+}
+.file-item:last-child { border-bottom: none; }
+.file-item-icon { font-size: 13px; flex-shrink: 0; }
+.file-item-name { flex: 1; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item-rows { font-size: 11px; color: var(--text3); flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.file-item-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.file-item-remove:hover { color: var(--red); }
+.file-list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 600;
+  border-top: 1px solid var(--border);
+  background: var(--green-light);
+}
+.file-list-footer:empty { display: none; }
+.file-list-footer button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 0;
+}
+.file-list-footer button:hover { color: var(--red); }
+
+/* ── LOG BOX ── */
+.log-box {
+  background: #1A1916;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  display: none;
+}
+.log-box.visible { display: block; }
+.log-line { padding: 1.5px 0; }
+.log-line.ok { color: #5CE89A; }
+.log-line.warn { color: #F5C842; }
+.log-line.err { color: #F47B7B; }
+.log-line.info { color: #7BBFF5; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-text); }
+.btn-success { background: var(--green); color: white; border-color: var(--green); }
+.btn-success:hover:not(:disabled) { background: #155233; }
+.btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border2); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface2); }
+.btn-danger { background: var(--red-light); color: var(--red); border-color: #f5b8b8; }
+.btn-danger:hover:not(:disabled) { background: #f9d5d5; }
+.btn-row { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+
+/* ── STATS GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.stat-label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: 0.3px; margin-bottom: 6px; text-transform: uppercase; }
+.stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
+.stat-value.money { font-size: 16px; }
+.stat-value.warn { color: var(--red); }
+.stat-value.green { color: var(--green); }
+
+/* ── TABS ── */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.tab-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+.tab-btn:hover { color: var(--text); background: var(--surface2); }
+.tab-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  border-bottom-color: var(--surface);
+}
+.tab-count {
+  display: inline-block;
+  background: var(--surface2);
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  font-weight: 600;
+}
+.tab-btn.active .tab-count { background: var(--accent-light); color: var(--accent-text); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-bar input, .filter-bar select {
+  padding: 8px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+.filter-bar input { flex: 1; min-width: 180px; }
+.filter-count { font-size: 12px; color: var(--text3); margin-left: auto; white-space: nowrap; }
+
+/* ── TABLE ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.table-scroll { overflow-x: auto; max-height: 440px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface2);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  z-index: 2;
+}
+tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface2); }
+tbody tr.row-warn td { background: #FFF9F0; }
+tbody tr.row-warn:hover td { background: #FFF3E0; }
+tbody tr.row-err td { background: var(--red-light); }
+.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
+.emp-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.emp-lotus { background: var(--lotus-bg); color: var(--lotus-text); }
+.emp-ltl { background: var(--ltl-bg); color: var(--ltl-text); }
+.emp-srv { background: var(--srv-bg); color: var(--srv-text); }
+.emp-unknown { background: var(--warn-bg); color: var(--warn-text); }
+.tipo-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.tipo-cte { background: #EAF1FA; color: #0D2E52; }
+.tipo-nfse { background: #E8F5EE; color: #0E4A2A; }
+.money-cell { text-align: right; font-weight: 600; font-family: 'DM Mono', monospace; font-size: 12px; }
+.status-ok { color: var(--green); font-size: 11px; }
+.status-warn { color: var(--amber); font-size: 11px; font-weight: 600; }
+.status-err { color: var(--red); font-size: 11px; font-weight: 600; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+}
+.empty-state .empty-icon { font-size: 32px; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; }
+
+/* ── INFO BOXES ── */
+.info-box {
+  background: var(--accent-light);
+  border: 1px solid #C5D9F2;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--accent-text);
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.warn-box {
+  background: var(--amber-light);
+  border: 1px solid #F5D9A0;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--amber);
+  margin-bottom: 16px;
+}
+
+/* ── EXPORT SECTION ── */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.export-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.export-card .export-icon { font-size: 26px; margin-bottom: 8px; }
+.export-card .export-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.export-card .export-count { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+.export-card .export-total { font-size: 15px; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  color: var(--text3);
+  font-size: 11px;
+  padding: 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 48px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-icon">YP</div>
+    <div>
+      <div class="logo-title">Cobrança Ypê</div>
+      <div class="logo-sub">Sistema de cruzamento financeiro</div>
+    </div>
+  </div>
+  <div class="topbar-steps" id="stepsBar">
+    <div class="step-item active" id="stepItem1">
+      <div class="step-n">1</div> Importar arquivos
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" id="stepItem2">
+      <div class="step-n">2</div> Cruzar dados
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" id="stepItem3">
+      <div class="step-n">3</div> Revisar
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item" id="stepItem4">
+      <div class="step-n">4</div> Exportar
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- PAGE 1: IMPORTAR -->
+  <div class="page active" id="page1">
+    <div class="page-header">
+      <h1>Importar arquivos</h1>
+      <p>Carregue os arquivos exportados de cada módulo. A2O e Multi são obrigatórios. Portal melhora a precisão do cruzamento.</p>
+    </div>
+
+    <div class="info-box">
+      <span>ℹ️</span>
+      <div>Arraste os arquivos diretamente nas áreas abaixo ou clique para selecionar. Formatos aceitos: <strong>.xlsx</strong>, <strong>.xls</strong> e <strong>.csv</strong>.</div>
+    </div>
+
+    <div class="upload-grid">
+
+      <!-- A2O -->
+      <div class="upload-card" id="cardA2O">
+        <div class="upload-card-top">
+          <div class="upload-card-header">
+            <span class="upload-source-tag tag-a2o">A2O</span>
+            <span class="upload-required">Obrigatório</span>
+          </div>
+          <div class="upload-title">Contas a Receber (A2O)</div>
+          <div class="upload-desc">Todos os títulos em aberto lançados no financeiro.</div>
+          <div class="upload-path">
+            A2O → Gerenciador de Contas a Pagar e Receber<br>
+            → Aberto / Pessoa / Receber / Data<br>
+            → Relatórios → W) Todos os Campos em Excel
+          </div>
+          <div class="upload-drop-zone" id="dropA2O"
+            onclick="triggerUpload('inputA2O')"
+            ondragover="onDragOver(event,'dropA2O')"
+            ondragleave="onDragLeave('dropA2O')"
+            ondrop="onDrop(event,'dropA2O','inputA2O','A2O')">
+            <span class="drop-icon">📂</span>
+            <div class="drop-label"><strong>Clique</strong> ou arraste arquivos aqui</div>
+          </div>
+          <input type="file" id="inputA2O" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="loadFiles(this,'A2O')">
+        </div>
+        <div class="file-list" id="listA2O"></div>
+      </div>
+
+      <!-- COMP -->
+      <div class="upload-card" id="cardComp">
+        <div class="upload-card-top">
+          <div class="upload-card-header">
+            <span class="upload-source-tag tag-portal">Portal</span>
+            <span class="upload-optional">Recomendado</span>
+          </div>
+          <div class="upload-title">Títulos Compensados</div>
+          <div class="upload-desc">O que a Ypê já pagou. Esses títulos serão excluídos automaticamente.</div>
+          <div class="upload-path">
+            Portal de Pagamentos → Títulos Compensados<br>
+            → Selecionar Data → Pesquisar → Exportar CSV
+          </div>
+          <div class="upload-drop-zone" id="dropComp"
+            onclick="triggerUpload('inputComp')"
+            ondragover="onDragOver(event,'dropComp')"
+            ondragleave="onDragLeave('dropComp')"
+            ondrop="onDrop(event,'dropComp','inputComp','COMP')">
+            <span class="drop-icon">📂</span>
+            <div class="drop-label"><strong>Clique</strong> ou arraste arquivos aqui</div>
+          </div>
+          <input type="file" id="inputComp" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="loadFiles(this,'COMP')">
+        </div>
+        <div class="file-list" id="listComp"></div>
+      </div>
+
+      <!-- ABERT -->
+      <div class="upload-card" id="cardAbert">
+        <div class="upload-card-top">
+          <div class="upload-card-header">
+            <span class="upload-source-tag tag-portal">Portal</span>
+            <span class="upload-optional">Recomendado</span>
+          </div>
+          <div class="upload-title">Títulos Abertos (Provisionados)</div>
+          <div class="upload-desc">O que a Ypê já programou para pagar. Serão excluídos da cobrança.</div>
+          <div class="upload-path">
+            Portal de Pagamentos → Títulos Abertos<br>
+            → Selecionar Data → Pesquisar → Exportar CSV
+          </div>
+          <div class="upload-drop-zone" id="dropAbert"
+            onclick="triggerUpload('inputAbert')"
+            ondragover="onDragOver(event,'dropAbert')"
+            ondragleave="onDragLeave('dropAbert')"
+            ondrop="onDrop(event,'dropAbert','inputAbert','ABERT')">
+            <span class="drop-icon">📂</span>
+            <div class="drop-label"><strong>Clique</strong> ou arraste arquivos aqui</div>
+          </div>
+          <input type="file" id="inputAbert" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="loadFiles(this,'ABERT')">
+        </div>
+        <div class="file-list" id="listAbert"></div>
+      </div>
+
+      <!-- MULTI -->
+      <div class="upload-card" id="cardMulti">
+        <div class="upload-card-top">
+          <div class="upload-card-header">
+            <span class="upload-source-tag tag-multi">Multi</span>
+            <span class="upload-required">Obrigatório</span>
+          </div>
+          <div class="upload-title">Relatório de Canhotos (Multi)</div>
+          <div class="upload-desc">Base inicial do processo. Confirma série, nota fiscal e status dos CT-es.</div>
+          <div class="upload-path">
+            Multi → Relatórios → CT-es<br>
+            → Tipo: Relatório de Canhotos → Data<br>
+            → Preview → Exportar CSV
+          </div>
+          <div class="upload-drop-zone" id="dropMulti"
+            onclick="triggerUpload('inputMulti')"
+            ondragover="onDragOver(event,'dropMulti')"
+            ondragleave="onDragLeave('dropMulti')"
+            ondrop="onDrop(event,'dropMulti','inputMulti','MULTI')">
+            <span class="drop-icon">📂</span>
+            <div class="drop-label"><strong>Clique</strong> ou arraste arquivos aqui</div>
+          </div>
+          <input type="file" id="inputMulti" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="loadFiles(this,'MULTI')">
+        </div>
+        <div class="file-list" id="listMulti"></div>
+      </div>
+
+    </div>
+
+    <div class="log-box" id="logImport"></div>
+
+    <div class="btn-row">
+      <span id="loadStatus" style="font-size:12px;color:var(--text3)">Aguardando arquivos obrigatórios...</span>
+      <button class="btn btn-primary" id="btnCruzar" onclick="paginaCruzar()" disabled>
+        Cruzar dados →
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: PROCESSANDO -->
+  <div class="page" id="page2">
+    <div class="page-header">
+      <h1>Cruzando dados...</h1>
+      <p>Analisando e comparando os registros entre os módulos.</p>
+    </div>
+    <div class="log-box visible" id="logProcess" style="max-height:300px"></div>
+  </div>
+
+  <!-- PAGE 3: RESULTADO -->
+  <div class="page" id="page3">
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <h1>Planilha de cobrança</h1>
+        <p>Títulos pendentes após cruzamento com Portal (compensados e abertos excluídos).</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;margin-top:4px">
+        <button class="btn btn-ghost" onclick="goPage(1)">← Reimportar</button>
+        <button class="btn btn-success" onclick="goPage(4)">Exportar planilhas →</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div id="warnBox" class="warn-box" style="display:none"></div>
+
+    <div class="tab-bar" id="tabBar"></div>
+
+    <div class="filter-bar">
+      <input type="text" id="filterText" placeholder="🔍  Buscar número, NF, empresa..." oninput="renderTable()">
+      <select id="filterTipo" onchange="renderTable()">
+        <option value="">Todos os tipos</option>
+        <option value="CTE">CT-e</option>
+        <option value="NFSe">NFS-e</option>
+      </select>
+      <select id="filterStatus" onchange="renderTable()">
+        <option value="">Todos os status</option>
+        <option value="ok">Localizado no Multi</option>
+        <option value="warn">Não lançado no A2O</option>
+        <option value="miss">Não localizado no Multi</option>
+      </select>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Tipo</th>
+              <th>Nº CTE / NFSe</th>
+              <th>Série</th>
+              <th>Nota Fiscal</th>
+              <th style="text-align:right">Valor</th>
+              <th>Emissão</th>
+              <th>Vencimento</th>
+              <th>Status Multi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 4: EXPORTAR -->
+  <div class="page" id="page4">
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <h1>Exportar planilhas</h1>
+        <p>Gere um arquivo XLSX com uma aba para cada empresa.</p>
+      </div>
+      <button class="btn btn-ghost" onclick="goPage(3)">← Voltar</button>
+    </div>
+
+    <div class="export-grid" id="exportGrid"></div>
+
+    <div class="table-wrap" style="margin-bottom:20px">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Resumo por empresa</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Qtd CT-e</th>
+              <th>Qtd NFS-e</th>
+              <th>Total títulos</th>
+              <th style="text-align:right">Valor total</th>
+            </tr>
+          </thead>
+          <tbody id="resumoBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportarXLSX()" style="font-size:14px;padding:11px 24px">
+        ⬇ Baixar planilha XLSX completa
+      </button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  Cobrança Ypê — Sistema de cruzamento financeiro &nbsp;·&nbsp; Uso interno
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+// DB stores arrays of rows per key; FILES stores metadata per key
+const DB = { A2O:[], COMP:[], ABERT:[], MULTI:[] };
+const FILES = { A2O:[], COMP:[], ABERT:[], MULTI:[] }; // [{name, rows}]
+const LOADED = { A2O:false, COMP:false, ABERT:false, MULTI:false };
+let RESULT = [];
+let ACTIVE_TAB = 'todos';
+let currentPage = 1;
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function norm(s){ return String(s||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function normNum(s){ return String(s||'').replace(/\D/g,'').replace(/^0+/,'').trim(); }
+function parseMoney(s){
+  if(typeof s==='number') return s;
+  const v = parseFloat(String(s||'0').replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''));
+  return isNaN(v)?0:v;
+}
+function fmtMoney(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(v){
+  if(!v) return '';
+  if(typeof v==='number'){
+    try{ const d=XLSX.SSF.parse_date_code(v); if(d) return pad(d.d)+'/'+pad(d.m)+'/'+d.y; }catch(e){}
+  }
+  return String(v).trim();
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function today(){ const d=new Date(); return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate()); }
+
+function classEmpresa(s){
+  const n = norm(s||'');
+  if(n.includes('35292474')||n.includes('LTLEXPRESS')||(/LTL/.test(n)&&!n.includes('LOTUS'))||n.includes('LTLEXP')) return 'LTL';
+  if(n.includes('SERVICO')||n.includes('SERVICE')||n.includes('LOTUSSE')||n.includes('LOTUSSR')) return 'SERVICOS';
+  if(n.includes('18834795')||n.includes('LOTUS')||n.includes('LOTUSTR')) return 'LOTUS';
+  return '';
+}
+
+// ═══════════════════════════════════════════════════
+//  UPLOAD — MULTI-FILE
+// ═══════════════════════════════════════════════════
+function triggerUpload(id){ document.getElementById(id).click(); }
+function onDragOver(e, zoneId){ e.preventDefault(); document.getElementById(zoneId).classList.add('dragover'); }
+function onDragLeave(zoneId){ document.getElementById(zoneId).classList.remove('dragover'); }
+function onDrop(e, dropId, inputId, key){
+  e.preventDefault();
+  document.getElementById(dropId).classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files).filter(f=>/\.(xlsx|xls|csv)$/i.test(f.name));
+  if(!files.length) return;
+  files.forEach(f => readOneFile(f, key));
+}
+
+function loadFiles(input, key){
+  const files = Array.from(input.files);
+  files.forEach(f => readOneFile(f, key));
+  input.value = '';
+}
+
+function readOneFile(file, key){
+  if(FILES[key].find(f=>f.name===file.name)){
+    logImport('warn', key+': "'+file.name+'" já foi adicionado — ignorado.');
+    return;
+  }
+  logImport('info', key+': lendo "'+file.name+'" ...');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      FILES[key].push({ name: file.name, rows: rows.length, rowData: rows });
+      DB[key] = FILES[key].reduce((acc,f)=>acc.concat(f.rowData),[]);
+      LOADED[key] = true;
+      logImport('ok', key+': '+rows.length.toLocaleString('pt-BR')+' linhas de "'+file.name+'" — total: '+DB[key].length.toLocaleString('pt-BR'));
+      renderFileList(key);
+      updateBtn();
+    }catch(err){
+      logImport('err', 'Erro ao ler "'+file.name+'": '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function removeFile(key, fileName){
+  FILES[key] = FILES[key].filter(f=>f.name!==fileName);
+  DB[key] = FILES[key].reduce((acc,f)=>acc.concat(f.rowData),[]);
+  LOADED[key] = FILES[key].length > 0;
+  renderFileList(key);
+  updateBtn();
+  logImport('warn', key+': "'+fileName+'" removido. Total restante: '+DB[key].length.toLocaleString('pt-BR')+' linhas.');
+}
+
+function renderFileList(key){
+  const list = document.getElementById('list'+capKey(key));
+  if(!list) return;
+  if(!FILES[key].length){ list.innerHTML=''; return; }
+  const totalRows = DB[key].length;
+  list.innerHTML =
+    FILES[key].map(f=>`
+      <div class="file-item">
+        <span class="file-item-icon">📄</span>
+        <span class="file-item-name" title="${f.name}">${f.name}</span>
+        <span class="file-item-rows">${f.rows.toLocaleString('pt-BR')} linhas</span>
+        <button class="file-item-remove" title="Remover" onclick="removeFile('${key}','${f.name.replace(/'/g,"\\'")}')">✕</button>
+      </div>`
+    ).join('')+
+    `<div class="file-list-footer">
+      <span>✓ ${FILES[key].length} arquivo${FILES[key].length>1?'s':''} · ${totalRows.toLocaleString('pt-BR')} linhas totais</span>
+      <button onclick="clearAllFiles('${key}')">Remover todos</button>
+    </div>`;
+}
+
+function clearAllFiles(key){
+  FILES[key] = [];
+  DB[key] = [];
+  LOADED[key] = false;
+  renderFileList(key);
+  updateBtn();
+  logImport('warn', key+': todos os arquivos removidos.');
+}
+
+function capKey(k){
+  const m={A2O:'A2O',COMP:'Comp',ABERT:'Abert',MULTI:'Multi'};
+  return m[k]||k;
+}
+
+function logImport(type, msg){
+  const box = document.getElementById('logImport');
+  box.classList.add('visible');
+  const p = document.createElement('div');
+  p.className = 'log-line '+type;
+  const prefix = {ok:'✓ ',warn:'⚠ ',err:'✗ ',info:'› '};
+  p.textContent = (prefix[type]||'')+msg;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+}
+
+function logProcess(type, msg){
+  const box = document.getElementById('logProcess');
+  const p = document.createElement('div');
+  p.className = 'log-line '+type;
+  const prefix = {ok:'✓ ',warn:'⚠ ',err:'✗ ',info:'› '};
+  p.textContent = (prefix[type]||'')+msg;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+}
+
+function updateBtn(){
+  const ok = LOADED.A2O && LOADED.MULTI;
+  const btn = document.getElementById('btnCruzar');
+  btn.disabled = !ok;
+  const n = Object.values(LOADED).filter(Boolean).length;
+  const totalArq = Object.values(FILES).reduce((s,a)=>s+a.length,0);
+  if(ok){
+    document.getElementById('loadStatus').textContent = totalArq+' arquivo'+(totalArq>1?'s':'')+' carregado'+(totalArq>1?'s':'')+' — pronto para cruzar.';
+    btn.textContent = 'Cruzar dados →';
+  } else {
+    document.getElementById('loadStatus').textContent = n+'/4 módulos com dados — faltam A2O e/ou Multi.';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PAGES
+// ═══════════════════════════════════════════════════
+function paginaCruzar(){
+  goPage(2);
+  setTimeout(cruzarDados, 80);
+}
+
+// ═══════════════════════════════════════════════════
+//  CRUZAMENTO
+// ═══════════════════════════════════════════════════
+function cruzarDados(){
+  const logs = [];
+  const lp = (t,m)=>{ logProcess(t,m); logs.push({t,m}); };
+
+  // ── Parse A2O ──
+  const a2oRows = DB.A2O.map(r=>{
+    const nfsCte = normNum(r['NFS CTE']||'');
+    const titBruto = String(r['TÍTULO']||r['TITÚLO']||r['TITULO']||r['TIT']||'');
+    const nfseNum = normNum(titBruto.split('.')[0]||'');
+    const cteRaw = String(r['Nº CTE']||r['N° CTE']||r['Nº CTE']||r['NºCTE']||r['NCte']||'');
+    const cteNum = normNum(cteRaw);
+    const isCTE = cteNum && cteNum!=='0';
+    const numDoc = isCTE ? cteNum : (nfsCte||nfseNum);
+    return {
+      origem:'A2O', empresa:classEmpresa(r['FILIAL']||''), filial:String(r['FILIAL']||''),
+      numDoc, nfsCte, cteNum, nfseNum, isCTE,
+      titulo:titBruto, pessoa:String(r['PESSOA']||''),
+      receber:parseMoney(r['RECEBER']),
+      emissao:fmtDate(r['EMISSÃO']||r['EMISSAO']||r['EMISS\u00c3O']||''),
+      vencimento:fmtDate(r['VENCIMENTO']||''),
+      raw:r
+    };
+  }).filter(r=>r.receber>0&&r.numDoc);
+
+  // ── Parse MULTI (só Autorizado/Justificado) ──
+  const multiRows = DB.MULTI.map(r=>{
+    const st = norm(r['Status']||'');
+    if(!st.includes('AUTORIZADO')&&!st.includes('JUSTIFICADO')) return null;
+    return {
+      numero:normNum(r['Número']||r['Numero']||''),
+      serie:String(r['Série CTe']||r['Serie CTe']||r['S\u00e9rie CTe']||r['Série']||r['Serie']||''),
+      nf:String(r['Nota Fiscal']||''),
+      status:String(r['Status']||''),
+      emissao:fmtDate(r['Data Emissão']||r['Data Emissao']||r['Data Emiss\u00e3o']||''),
+      pago:norm(r['Pago']||''),
+      valorReceber:parseMoney(r['Valor a Receber']||0)
+    };
+  }).filter(Boolean);
+
+  // ── Sets de compensados e abertos ──
+  const compSet = new Set();
+  DB.COMP.forEach(r=>{
+    const nf = (r['Nota fiscal']||r['Nota Fiscal']||'').toString().split('-')[0];
+    const n = normNum(nf); if(n) compSet.add(n);
+  });
+  const abertSet = new Set();
+  DB.ABERT.forEach(r=>{
+    const nf = (r['Nota fiscal']||r['Nota Fiscal']||'').toString().split('-')[0];
+    const n = normNum(nf); if(n) abertSet.add(n);
+  });
+
+  lp('info','─────────────────────────────────────');
+  lp('ok','A2O: '+a2oRows.length.toLocaleString('pt-BR')+' títulos a receber parseados');
+  lp('ok','Multi: '+multiRows.length.toLocaleString('pt-BR')+' CT-es válidos (Autorizado / Justificado)');
+  lp('ok','Portal Compensados: '+compSet.size.toLocaleString('pt-BR')+' documentos já pagos → serão excluídos');
+  lp('ok','Portal Abertos: '+abertSet.size.toLocaleString('pt-BR')+' documentos provisionados → serão excluídos');
+  lp('info','─────────────────────────────────────');
+
+  // ── Map multi ──
+  const multiMap = {};
+  multiRows.forEach(m=>{ multiMap[m.numero]=m; });
+
+  // ── Cruzamento A2O ──
+  const resultado = [];
+  let excComp=0, excAbert=0;
+  a2oRows.forEach(a=>{
+    const num = a.numDoc;
+    if(compSet.has(num)){ excComp++; return; }
+    if(abertSet.has(num)){ excAbert++; return; }
+    const multi = multiMap[num];
+    const serie = multi?multi.serie:'';
+    const nf = multi?multi.nf:'';
+    let statusMulti='', statusCls='miss';
+    if(multi){ statusMulti='Localizado'; statusCls='ok'; }
+    else { statusMulti='Não localizado no Multi'; statusCls='miss'; }
+    resultado.push({
+      empresa:a.empresa||classEmpresa(a.filial),
+      filial:a.filial, tipo:a.isCTE?'CTE':'NFSe',
+      numDoc:num, serie, notaFiscal:nf||a.nfsCte,
+      valor:a.receber,
+      emissao:a.emissao||(multi?multi.emissao:''),
+      vencimento:a.vencimento,
+      pessoa:a.pessoa,
+      statusMulti, statusCls
+    });
+  });
+
+  lp('ok','Excluídos (já compensados): '+excComp.toLocaleString('pt-BR'));
+  lp('ok','Excluídos (já abertos/provisionados): '+excAbert.toLocaleString('pt-BR'));
+
+  // ── Multi não lançado no A2O ──
+  const a2oNums = new Set(a2oRows.map(r=>r.numDoc));
+  let naoLancados=0;
+  multiRows.forEach(m=>{
+    if(!a2oNums.has(m.numero)&&!compSet.has(m.numero)&&!abertSet.has(m.numero)&&m.pago!=='SIM'){
+      naoLancados++;
+      resultado.push({
+        empresa:'', filial:'', tipo:'CTE',
+        numDoc:m.numero, serie:m.serie, notaFiscal:m.nf,
+        valor:m.valorReceber, emissao:m.emissao, vencimento:'',
+        pessoa:'', statusMulti:'⚠ Não lançado no A2O — verificar', statusCls:'warn'
+      });
+    }
+  });
+
+  if(naoLancados>0) lp('warn',naoLancados+' CT-es do Multi não lançados no A2O e não pagos — requer atenção!');
+  lp('info','─────────────────────────────────────');
+  lp('ok','Total de títulos na planilha de cobrança: '+resultado.length.toLocaleString('pt-BR'));
+
+  const totalVal = resultado.reduce((s,r)=>s+r.valor,0);
+  lp('ok','Valor total a cobrar: '+fmtMoney(totalVal));
+  lp('info','─────────────────────────────────────');
+  lp('ok','Processamento concluído. Redirecionando...');
+
+  RESULT = resultado;
+  setTimeout(()=>{
+    goPage(3);
+    renderStats();
+    buildTabs();
+    renderTable();
+  }, 600);
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER STATS
+// ═══════════════════════════════════════════════════
+function renderStats(){
+  const total = RESULT.length;
+  const totalVal = RESULT.reduce((s,r)=>s+r.valor,0);
+  const warns = RESULT.filter(r=>r.statusCls==='warn').length;
+  const emps = [...new Set(RESULT.map(r=>r.empresa).filter(Boolean))].length;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card">
+      <div class="stat-label">Títulos a cobrar</div>
+      <div class="stat-value">${total.toLocaleString('pt-BR')}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Valor total</div>
+      <div class="stat-value money">${fmtMoney(totalVal)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pendências Multi</div>
+      <div class="stat-value ${warns>0?'warn':'green'}">${warns}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Empresas</div>
+      <div class="stat-value">${emps}</div>
+    </div>
+  `;
+  const warns2 = RESULT.filter(r=>r.statusCls==='warn');
+  const warnBox = document.getElementById('warnBox');
+  if(warns2.length>0){
+    warnBox.style.display='block';
+    warnBox.innerHTML='⚠️ <strong>'+warns2.length+' CT-es</strong> identificados no Multi mas não lançados no A2O e não pagos. Verifique a necessidade de lançamento antes de enviar a cobrança.';
+  } else { warnBox.style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════
+function buildTabs(){
+  const grupos = [
+    {key:'todos', label:'Todos'},
+    {key:'LOTUS', label:'LOTUS Transportes'},
+    {key:'LTL', label:'LTL Express'},
+    {key:'SERVICOS', label:'LOTUS Serviços'},
+    {key:'', label:'Sem empresa'},
+  ];
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = grupos.map(g=>{
+    const count = g.key==='todos' ? RESULT.length : RESULT.filter(r=>r.empresa===g.key).length;
+    if(count===0 && g.key!=='todos') return '';
+    return `<button class="tab-btn${ACTIVE_TAB===g.key?' active':''}" onclick="setTab('${g.key}')">
+      ${g.label}<span class="tab-count">${count}</span>
+    </button>`;
+  }).join('');
+}
+
+function setTab(t){
+  ACTIVE_TAB=t;
+  buildTabs();
+  renderTable();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER TABLE
+// ═══════════════════════════════════════════════════
+function renderTable(){
+  const fText = norm(document.getElementById('filterText').value);
+  const fTipo = document.getElementById('filterTipo').value;
+  const fStatus = document.getElementById('filterStatus').value;
+
+  let rows = RESULT;
+  if(ACTIVE_TAB!=='todos') rows=rows.filter(r=>r.empresa===ACTIVE_TAB);
+  if(fText) rows=rows.filter(r=>
+    norm(r.numDoc).includes(fText)||
+    norm(r.notaFiscal).includes(fText)||
+    norm(r.pessoa).includes(fText)||
+    norm(r.filial).includes(fText)
+  );
+  if(fTipo) rows=rows.filter(r=>r.tipo===fTipo);
+  if(fStatus==='ok') rows=rows.filter(r=>r.statusCls==='ok');
+  if(fStatus==='warn') rows=rows.filter(r=>r.statusCls==='warn');
+  if(fStatus==='miss') rows=rows.filter(r=>r.statusCls==='miss');
+
+  document.getElementById('filterCount').textContent = rows.length.toLocaleString('pt-BR')+' registros';
+
+  if(rows.length===0){
+    document.getElementById('tableBody').innerHTML=`
+      <tr><td colspan="9">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <p>Nenhum resultado encontrado para os filtros aplicados.</p>
+        </div>
+      </td></tr>`;
+    return;
+  }
+
+  document.getElementById('tableBody').innerHTML = rows.map(r=>{
+    const empCls = r.empresa==='LOTUS'?'emp-lotus':r.empresa==='LTL'?'emp-ltl':r.empresa==='SERVICOS'?'emp-srv':'emp-unknown';
+    const tipoCls = r.tipo==='CTE'?'tipo-cte':'tipo-nfse';
+    const rowCls = r.statusCls==='warn'?'row-warn':r.statusCls==='miss'?'':'';
+    const statusCls2 = r.statusCls==='ok'?'status-ok':r.statusCls==='warn'?'status-warn':'status-err';
+    const statusTxt = r.statusCls==='ok'?'✓ Localizado':r.statusMulti;
+    return `<tr class="${rowCls}">
+      <td><span class="emp-tag ${empCls}">${r.empresa||'?'}</span></td>
+      <td><span class="tipo-tag ${tipoCls}">${r.tipo}</span></td>
+      <td class="mono">${r.numDoc}</td>
+      <td class="mono">${r.serie}</td>
+      <td class="mono">${r.notaFiscal||'—'}</td>
+      <td class="money-cell">${fmtMoney(r.valor)}</td>
+      <td style="color:var(--text2);font-size:12px">${r.emissao||'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${r.vencimento||'—'}</td>
+      <td class="${statusCls2}">${statusTxt}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  PAGE 4: EXPORT PREVIEW
+// ═══════════════════════════════════════════════════
+function renderExportPage(){
+  const emps = [
+    {key:'LOTUS', label:'LOTUS Transportes', icon:'🔵'},
+    {key:'LTL', label:'LTL Express', icon:'🟠'},
+    {key:'SERVICOS', label:'LOTUS Serviços', icon:'🟢'},
+    {key:'', label:'Sem empresa', icon:'⚠️'},
+  ];
+  const grid = document.getElementById('exportGrid');
+  grid.innerHTML = emps.map(e=>{
+    const rows = RESULT.filter(r=>r.empresa===e.key);
+    if(!rows.length) return '';
+    const total = rows.reduce((s,r)=>s+r.valor,0);
+    return `<div class="export-card">
+      <div class="export-icon">${e.icon}</div>
+      <div class="export-name">${e.label}</div>
+      <div class="export-count">${rows.length} títulos</div>
+      <div class="export-total">${fmtMoney(total)}</div>
+    </div>`;
+  }).join('');
+
+  const tbody = document.getElementById('resumoBody');
+  tbody.innerHTML = emps.map(e=>{
+    const rows = RESULT.filter(r=>r.empresa===e.key);
+    if(!rows.length) return '';
+    const ctes = rows.filter(r=>r.tipo==='CTE').length;
+    const nfses = rows.filter(r=>r.tipo==='NFSe').length;
+    const total = rows.reduce((s,r)=>s+r.valor,0);
+    const empCls = e.key==='LOTUS'?'emp-lotus':e.key==='LTL'?'emp-ltl':e.key==='SERVICOS'?'emp-srv':'emp-unknown';
+    return `<tr>
+      <td><span class="emp-tag ${empCls}">${e.label}</span></td>
+      <td>${ctes}</td><td>${nfses}</td><td>${rows.length}</td>
+      <td class="money-cell">${fmtMoney(total)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// goPage — handles page transitions and export preview trigger
+function goPage(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page'+n).classList.add('active');
+  currentPage = n;
+  [1,2,3,4].forEach(i=>{
+    const el = document.getElementById('stepItem'+i);
+    el.classList.remove('active','done');
+    if(i < n) el.classList.add('done');
+    if(i === n) el.classList.add('active');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===4) renderExportPage();
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT XLSX
+// ═══════════════════════════════════════════════════
+function exportarXLSX(){
+  const wb = XLSX.utils.book_new();
+  const emps = [
+    {key:'LOTUS', label:'LOTUS_Transportes'},
+    {key:'LTL',   label:'LTL_Express'},
+    {key:'SERVICOS', label:'LOTUS_Servicos'},
+    {key:'', label:'Sem_Empresa'},
+  ];
+
+  const hdrs = ['Nº CTE / NFSe','Série','Nota Fiscal','Tipo','Empresa / Filial','Pessoa','Valor (R$)','Emissão','Vencimento','Status Multi'];
+
+  let gerou=0;
+  emps.forEach(emp=>{
+    const rows = RESULT.filter(r=>r.empresa===emp.key);
+    if(!rows.length) return;
+    const data = [hdrs];
+    rows.forEach(r=>{
+      data.push([r.numDoc, r.serie, r.notaFiscal, r.tipo, r.filial||emp.label, r.pessoa, r.valor, r.emissao, r.vencimento, r.statusMulti]);
+    });
+    // Totalizador
+    data.push(['','','','','','TOTAL', rows.reduce((s,r)=>s+r.valor,0),'','','']);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:16},{wch:8},{wch:16},{wch:8},{wch:30},{wch:32},{wch:14},{wch:12},{wch:12},{wch:34}];
+    // Formatar coluna Valor como número
+    for(let i=2;i<=data.length;i++){
+      const cell = ws[XLSX.utils.encode_cell({r:i-1,c:6})];
+      if(cell&&typeof cell.v==='number') cell.z='R$ #.##0,00';
+    }
+    XLSX.utils.book_append_sheet(wb, ws, emp.label);
+    gerou++;
+  });
+
+  if(!gerou){ alert('Nenhum dado para exportar.'); return; }
+  XLSX.writeFile(wb, 'Cobranca_Ype_'+today()+'.xlsx');
+}
+</script>
+</body>
+</html>
